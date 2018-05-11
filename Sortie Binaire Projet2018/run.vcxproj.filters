@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\antoi\Desktop\UCL\Q4\myFem-Poisson\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\antoi\Desktop\UCL\Q4\Sortie Binaire Poisson\CMakeFiles\07a873fabc3521f12b2762ed1adcec8c\run.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\antoi\Desktop\UCL\Q4\Sortie Binaire Poisson\CMakeFiles\run" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{8819FF2E-336F-357E-9BEC-FE6594844858}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
