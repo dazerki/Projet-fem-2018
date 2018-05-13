@@ -1,4 +1,6 @@
-﻿  main.c
-c:\users\antoi\desktop\ucl\q4\myfem-poisson\src\main.c(49): warning C4244: 'fonction' : conversion de 'double' en 'int', perte possible de données
-c:\users\antoi\desktop\ucl\q4\myfem-poisson\src\main.c(56): warning C4244: 'initialisation' : conversion de 'double' en 'int', perte possible de données
+﻿  homework.c
+c:\users\antoi\desktop\ucl\q4\myfem-poisson\src\homework.c(25): warning C4244: 'fonction' : conversion de 'double' en 'int', perte possible de données
+c:\users\antoi\desktop\ucl\q4\myfem-poisson\src\homework.c(171): warning C4244: 'fonction' : conversion de 'double' en 'const int', perte possible de données
+c:\users\antoi\desktop\ucl\q4\myfem-poisson\src\homework.c(56): warning C4172: retourne l'adresse d'une variable locale ou : tab temporaire
+c:\users\antoi\desktop\ucl\q4\myfem-poisson\src\homework.c(62): warning C4172: retourne l'adresse d'une variable locale ou : xsi temporaire
   myFem.vcxproj -> C:\Users\antoi\Desktop\UCL\Q4\Sortie Binaire Poisson\Debug\myFem.exe
