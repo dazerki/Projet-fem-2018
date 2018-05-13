@@ -70,7 +70,7 @@ int main(void)
 
         glfwGetFramebufferSize(window,&w,&h);
         glfemReshapeWindows(theProblem->mesh,w,h);
-		glfemReshapeWindows2(radiusOut, w, h);
+		//glfemReshapeWindows2(radiusOut, w, h);
         glfemPlotField(theProblem->mesh,V);            
 		
 		
@@ -78,6 +78,8 @@ int main(void)
 
 			glColor3f(1, 0, 0);
 			glfemDrawDisk(theGrains->x[i], theGrains->y[i], theGrains->r[i]);
+		}
+
 			glColor3f(0, 0, 0); glfemDrawCircle(0, 0, radiusOut);
 			glColor3f(0, 0, 0); glfemDrawCircle(0, 0, radiusIn);
 			
@@ -94,12 +96,12 @@ int main(void)
 				//       printf("press CR to compute the next time step >>");
 				//      char c= getchar();
 				//
-				_sleep(100);
+				//_sleep(100);
 				femGrainsUpdate(theGrains, dt, tol, iterMax,theProblem);
 				t += dt;
 
 			}
-		}
+		
 			while (glfwGetTime() - currentTime < theVelocityFactor) {
 				if (glfwGetKey(window, 'R') == GLFW_PRESS)
 					theRunningMode = 1;
