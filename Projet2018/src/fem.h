@@ -88,6 +88,7 @@ typedef struct {
 	double *m;
 	double *dvBoundary;
 	double *dvContacts;
+	int	   *element;
 } femGrains;
 
 femIntegration      *femIntegrationCreate(int n, femElementType type);
@@ -121,7 +122,7 @@ void                 femFullSystemConstrain(femFullSystem* mySystem, int myNode,
 
 femPoissonProblem   *femPoissonCreate(const char *filename);
 void                 femPoissonFree(femPoissonProblem *theProblem);
-void                 femPoissonSolve(femPoissonProblem *theProblem);
+void				 femPoissonSolve(femPoissonProblem *theProblem, femGrains *theGrains);
 
 femGrains  *femGrainsCreateSimple(int n, double r, double m, double radiusIn, double radiusOut);
 femGrains  *femGrainsCreateTiny(double radiusIn, double radiusOut);
@@ -135,9 +136,10 @@ void                 femError(char *text, int line, char *file);
 void                 femErrorScan(int test, int line, char *file);
 void                 femWarning(char *text, int line, char *file);
 
-int			femInBowl(femPoissonProblem* theProblem, int numElem, int xBowl, int yBowl);
+int			femInBowl(femPoissonProblem* theProblem, int numElem, double xBowl, double yBowl);
 int			findTriangle(femPoissonProblem* theProblem, double x, double y);
-
-
+void		femFullSystemReinit(femPoissonProblem *theProblem);
+double		jacobien(double x1, double x2, double x3, double y1, double y2, double y3);
+void		isomorphisme(double X[3], double Y[3], double x[2], double *xsi);
 
 #endif

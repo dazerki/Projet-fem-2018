@@ -495,7 +495,7 @@ void femWarning(char *text, int line, char *file)
 *
 */
 
-#include "fem.h"
+
 
 femGrains *femGrainsCreateSimple(int n, double r, double m, double radiusIn, double radiusOut)
 {
@@ -516,6 +516,7 @@ femGrains *femGrainsCreateSimple(int n, double r, double m, double radiusIn, dou
 	theGrains->vy = malloc(n * sizeof(double));
 	theGrains->r = malloc(n * sizeof(double));
 	theGrains->m = malloc(n * sizeof(double));
+	theGrains->element = malloc(n * sizeof(int));
 	theGrains->dvBoundary = malloc(n * sizeof(double));
 	theGrains->dvContacts = malloc(nContact * sizeof(double));
 
@@ -527,6 +528,7 @@ femGrains *femGrainsCreateSimple(int n, double r, double m, double radiusIn, dou
 		theGrains->vx[i] = 0.0;
 		theGrains->vy[i] = 0.0;
 		theGrains->dvBoundary[i] = 0.0;
+		theGrains->element[i] = 0;
 	}
 
 	for (i = 0; i < nContact; i++)
@@ -585,6 +587,7 @@ void femGrainsFree(femGrains *theGrains)
 	free(theGrains->m);
 	free(theGrains->dvBoundary);
 	free(theGrains->dvContacts);
+	free(theGrains->element);
 	free(theGrains);
 }
 

@@ -2,26 +2,33 @@
 #include"fem.h"
 
 # ifndef NOPOISSONCREATE
-
-int femInBowl(femPoissonProblem* theProblem, int numElem, int xBowl, int yBowl)
+double jacobien(double x1,double x2,double x3,double y1,double y2, double y3) {
+	return ((x1 - x3)*(y2 - y1) - (x1 - x2)*(y3 - y1));
+}
+int femInBowl(femPoissonProblem* theProblem, int numElem, double xBowl, double yBowl)
 {
-	double s = 0;
+	double s1 = 0;
+	double s2 = 0;
+	double s3 = 0;
 	double sEq = 0;
-	int node[] = { theProblem->mesh->elem[numElem], theProblem->mesh->elem[numElem + 1],theProblem->mesh->elem[numElem + 2] };
+	int node[3];
+	for (int i = 0; i < 3; i++) {
+		node[i] = theProblem->mesh->elem[3 * numElem + i];
+	}
 	double x[] = { theProblem->mesh->X[node[0]], theProblem->mesh->X[node[1]],theProblem->mesh->X[node[2]] };
 	double y[] = { theProblem->mesh->Y[node[0]], theProblem->mesh->Y[node[1]],theProblem->mesh->Y[node[2]] };
-	s = 0.5 * fabs((x[1] - xBowl)*(y[2] - yBowl) - (x[2] - xBowl)*(y[1] - yBowl));
-	s += 0.5 * fabs((x[0] - xBowl)*(y[1] - yBowl) - (x[1] - xBowl)*(y[0] - yBowl));
-	s += 0.5 * fabs((x[2] - xBowl)*(y[0] - yBowl) - (x[0] - xBowl)*(y[2] - yBowl));
-	sEq = 0.5 * fabs((x[1] - x[0])*(y[2] - y[0]) - (x[2] - x[0])*(y[1] - y[0]));
-	if (s<=sEq)
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
+	s1 = jacobien(xBowl, x[0], x[1], yBowl, y[0], y[1]); 
+	s2 = jacobien(xBowl, x[1], x[2], yBowl, y[1], y[2]); 
+	s3 = jacobien(xBowl, x[2], x[0], yBowl, y[2], y[0]); 
+	return ((s1 >= 0 && s2 >= 0 && s3 >= 0) || (s1 <= 0 && s2 <= 0 && s3 <= 0));
+	
+}
+void isomorphisme(double X[3], double Y[3], double x[2], double *xsi)
+{
+	double X1 = X[0], X2 = X[1], X3 = X[2];
+	double Y1 = Y[0], Y2 = Y[1], Y3 = Y[2];
+	xsi[0] = -(X1*Y3 - X3 * Y1 - X1 * x[1] + Y1 * x[0] + X3 * x[1] - Y3 * x[0]) / (X1*Y2 - X2 * Y1 - X1 * Y3 + X3 * Y1 + X2 * Y3 - X3 * Y2);
+	xsi[1] = (X1*Y2 - X2 * Y1 - X1 * x[1] + Y1 * x[0] + X2 * x[1] - Y2 * x[0]) / (X1*Y2 - X2 * Y1 - X1 * Y3 + X3 * Y1 + X2 * Y3 - X3 * Y2);
 }
 int findTriangle(femPoissonProblem* theProblem, double x, double y) {
 	for (int i = 0; i < theProblem->mesh->nElem; i++) {
@@ -57,6 +64,20 @@ void femPoissonFree(femPoissonProblem *theProblem)
 	femMeshFree(theProblem->mesh);
 	free(theProblem);
 }
+void femFullSystemReinit(femPoissonProblem *theProblem)
+{
+	int size = theProblem->systemX->size;
+	for (int i = 0; i < size*(size + 1); i++) {
+		theProblem->systemX->B[i] = 0;
+		theProblem->systemY->B[i] = 0;
+	}
+	for (int k = 0; k < size; k++) {
+		for (int l = 0; l < size; l++) {
+			theProblem->systemX->A[k][l] = 0;
+			theProblem->systemY->A[k][l] = 0;
+		}
+	}
+}
 
 
 # endif
@@ -78,7 +99,7 @@ void femMeshLocal(const femMesh *theMesh, const int i, int *map, double *x, doub
 # ifndef NOPOISSONSOLVE
 
 
-void femPoissonSolve(femPoissonProblem *theProblem)
+void femPoissonSolve(femPoissonProblem *theProblem, femGrains *theGrains)
 {
 
 	// Calcul de A: la matrice de raideur
@@ -120,6 +141,26 @@ void femPoissonSolve(femPoissonProblem *theProblem)
 				theProblem->systemX->B[map[f]] = 0; //theProblem->system->Bx[map[f]] + phi[f] * Je *  theProblem->rule->weight[p];
 				theProblem->systemY->B[map[f]] = 0;
 			}
+			double xsi[3], phi[3], point[2], xs[3], ys[3];
+			int elem, map[4];
+			for (int i = 0; i < theGrains->n; ++i) {
+				elem = theGrains->element[i];
+				if (elem < 0)
+					continue;
+				point[0] = theGrains->x[i];
+				point[1] = theGrains->y[i];
+				femMeshLocal(theProblem->mesh, elem, map, xs, ys);
+				isomorphisme(xs, ys, point, xsi);
+				theProblem->space->phi2(xsi[0], xsi[1], phi);
+				for (int k = 0; k < 3; ++k) {
+					for (int l = 0; l < 3; ++l) {
+						theProblem->systemX->A[map[k]][map[l]] +=   phi[k] * phi[l];
+						theProblem->systemY->A[map[k]][map[l]] +=  phi[k] * phi[l];
+					}
+					theProblem->systemX->B[map[k]] =  phi[k] * theGrains->vx[i];
+					theProblem->systemY->B[map[k]] =  phi[k] * theGrains->vy[i];
+				}
+			}
 			
 		}
 	}
@@ -131,7 +172,6 @@ void femPoissonSolve(femPoissonProblem *theProblem)
 			double theta = atan2(y1,x1);
 			double speedX = sin(theta);
 			double speedY = -cos(theta);
-			printf("%f, %f, %f, %f \n",x1, y1, speedX, speedY);
 			for (int i = 0; i < 2; i++) {
 				femFullSystemConstrain(theProblem->systemX, theProblem->edges->edges[z].node[i], speedX);
 				femFullSystemConstrain(theProblem->systemY, theProblem->edges->edges[z].node[i], speedY);
@@ -272,11 +312,38 @@ void femGrainsUpdate(femGrains *myGrains, double dt, double tol, double iterMax,
 	// 
 	// -1- Calcul des nouvelles vitesses des grains sur base de la gravité et de la trainee
 	//
-	for (int j = 0; j < n; j++) {
-		int elem = findTriangle(theProblem, x[j], y[j]);
-		vx[j] +=  - (dt * gamma/m[j])*(vx[j]- theProblem->systemX->B[elem] );
-		vy[j] += dt * gy - (dt * gamma/m[j])*(vy[j]- theProblem->systemY->B[elem]) ;
+	for (int k = 0; k < n; k++) {
+		myGrains->element[k] = findTriangle(theProblem, x[k], y[k]);
 	}
+	int elem, map[3];
+	double xloc[3], yloc[3], phi[3], xsi[2], p[2], ux, uy;
+	for (int i = 0; i < n; ++i) {
+		elem = myGrains->element[i];
+		if (elem < 0) {
+			ux = 0;
+			uy = 0;
+		}
+		else {
+			p[0] = x[i];
+			p[1] = y[i];
+			femMeshLocal(theProblem->mesh, elem, map, xloc, yloc);
+			isomorphisme(xloc, yloc, p, xsi);
+			ux = 0;
+			uy = 0;
+			theProblem->space->phi2(xsi[0], xsi[1], phi);
+			for (int j = 0; j < 3; ++j) {
+				ux += phi[j] * theProblem->systemX->B[map[j]];
+				uy += phi[j] * theProblem->systemY->B[map[j]];
+			}
+		}
+		vx[i] += (m[i] * gx -   (vx[i] - ux)) * dt / m[i];
+		vy[i] += (m[i] * gy - (vy[i] - uy)) * dt / m[i];
+	}
+	/*for (int j = 0; j < n; j++) {
+		int elem = findTriangle(theProblem, x[j], y[j]); 
+		vx[j] += -(dt * gamma / m[j])*(vx[j] - theProblem->systemX->B[elem]); 
+		vy[j] += dt * gy - (dt * gamma/m[j])*(vy[j]- theProblem->systemY->B[elem]) ; 
+	}*/
 	printf("%f", gamma);
 	//
 	// -2- Correction des vitesses pour tenir compte des contacts        
@@ -294,6 +361,7 @@ void femGrainsUpdate(femGrains *myGrains, double dt, double tol, double iterMax,
 		x[i] += vx[i] * dt;
 		y[i] += vy[i] * dt;
 	}
+	
 }
 
 

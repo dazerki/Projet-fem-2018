@@ -34,11 +34,11 @@ int main(void)
 	//int l = femInBowl(theProblem, 0, 4, 5);
 	//printf("%d", l);
 
-    femPoissonSolve(theProblem);   
+    
 	int    n = 15;
-	double radius = 0.1;
+	double radius = 0.05;
 	double mass = 0.1;
-	double radiusIn = 0.5;
+	double radiusIn = 0.4;
 	double radiusOut = 2.0;
 	double dt = 1.0e-1;
 	double tEnd = 8.0;
@@ -46,21 +46,22 @@ int main(void)
 	double t = 0;
 	double iterMax = 100;
 	femGrains* theGrains = femGrainsCreateSimple(n, radius, mass, radiusIn, radiusOut);
-	int quelTriangle = femInBowl(theProblem,0, 1.50283, 0.7032);
-	printf("%d \n", quelTriangle);
+	femPoissonSolve(theProblem, theGrains);
+	
+	//int quelTriangle = findTriangle(theProblem, -1.65, 0.9);
+	//printf("%d \n", quelTriangle);
 	//glfwMakeContextCurrent(window);
-	double *V = malloc(sizeof(double) * theProblem->systemX->size);
-	for (int i = 0; i < theProblem->systemX->size; i++) {
-		V[i] = sqrt(pow(theProblem->systemX->B[i], 2) + pow(theProblem->systemY->B[i], 2));
-	}
+	
 	int theRunningMode = 1.0;
-	float theVelocityFactor = 0.25;
+	float theVelocityFactor = 1.0;
  
     printf("Maximum value : %.4f\n", femMax(theProblem->systemX->B,theProblem->systemX->size));
     fflush(stdout);
     
     char theMessage[256];
     sprintf(theMessage, "Max : %.4f", femMax(theProblem->systemX->B,theProblem->systemX->size));
+
+	double *V = malloc(sizeof(double) * theProblem->systemX->size);
     
     GLFWwindow* window = glfemInit("MECA1120 : Projet ");
     glfwMakeContextCurrent(window);
@@ -71,8 +72,14 @@ int main(void)
         glfwGetFramebufferSize(window,&w,&h);
         glfemReshapeWindows(theProblem->mesh,w,h);
 		//glfemReshapeWindows2(radiusOut, w, h);
-        glfemPlotField(theProblem->mesh,V);            
 		
+		for (int i = 0; i < theProblem->systemX->size; i++) {
+			V[i] = sqrt(pow(theProblem->systemX->B[i], 2) + pow(theProblem->systemY->B[i], 2));
+		}
+		glfemPlotField(theProblem->mesh, V);
+		for (int i = 0; i < theProblem->systemX->size; i++) {
+			printf("%d : %f\n", i, V);
+		}
 		
 		for (i = 0; i < theGrains->n; i++) {
 
@@ -97,6 +104,8 @@ int main(void)
 				//      char c= getchar();
 				//
 				//_sleep(100);
+				femFullSystemReinit(theProblem);
+				femPoissonSolve(theProblem, theGrains);
 				femGrainsUpdate(theGrains, dt, tol, iterMax,theProblem);
 				t += dt;
 
