@@ -1,4 +1,3 @@
-
 /*
  *  fem.h
  *  Library for MECA1120 : Finite Elements for dummies
@@ -22,7 +21,7 @@
 #define FALSE 0 
 #define TRUE  1
 
-typedef enum {FEM_TRIANGLE,FEM_QUAD} femElementType;
+typedef enum {FEM_TRIANGLE} femElementType;
 
 typedef struct {
     int *elem;
@@ -126,7 +125,6 @@ void                 femPoissonFree(femPoissonProblem *theProblem);
 void                 femPoissonSolve(femPoissonProblem *theProblem, femGrains *theGrains);
 
 femGrains  *femGrainsCreateSimple(int n, double r, double m, double radiusIn, double radiusOut);
-femGrains  *femGrainsCreateTiny(double radiusIn, double radiusOut);
 void        femGrainsFree(femGrains *myGrains);
 void        femGrainsUpdate(femGrains *myGrains, double dt, double tol, double iterMax, femPoissonProblem *theProblem);
 double      femGrainsContactIterate(femGrains *myGrains, double dt, int iter);

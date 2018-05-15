@@ -9,9 +9,6 @@
 
 #include "fem.h"
 
-static const double _gaussQuad4Xsi[4]    = {-0.577350269189626,-0.577350269189626, 0.577350269189626, 0.577350269189626};
-static const double _gaussQuad4Eta[4]    = { 0.577350269189626,-0.577350269189626,-0.577350269189626, 0.577350269189626};
-static const double _gaussQuad4Weight[4] = { 1.000000000000000, 1.000000000000000, 1.000000000000000, 1.000000000000000};
 static const double _gaussTri3Xsi[3]     = { 0.166666666666667, 0.666666666666667, 0.166666666666667};
 static const double _gaussTri3Eta[3]     = { 0.166666666666667, 0.166666666666667, 0.666666666666667};
 static const double _gaussTri3Weight[3]  = { 0.166666666666667, 0.166666666666667, 0.166666666666667};
@@ -21,11 +18,7 @@ femIntegration *femIntegrationCreate(int n, femElementType type)
 {
     femIntegration *theRule = malloc(sizeof(femIntegration));
     if (type == FEM_QUAD && n == 4) {
-        theRule->n      = 4;
-        theRule->xsi    = _gaussQuad4Xsi;
-        theRule->eta    = _gaussQuad4Eta;
-        theRule->weight = _gaussQuad4Weight; }
-    else if (type == FEM_TRIANGLE && n == 3) {
+	 if (type == FEM_TRIANGLE && n == 3) {
         theRule->n      = 3;
         theRule->xsi    = _gaussTri3Xsi;
         theRule->eta    = _gaussTri3Eta;
@@ -37,35 +30,6 @@ femIntegration *femIntegrationCreate(int n, femElementType type)
 void femIntegrationFree(femIntegration *theRule)
 {
     free(theRule);
-}
-
-void _q1c0_x(double *xsi, double *eta) 
-{
-    xsi[0] =  1.0;  eta[0] =  1.0;
-    xsi[1] = -1.0;  eta[1] =  1.0;
-    xsi[2] = -1.0;  eta[2] = -1.0;
-    xsi[3] =  1.0;  eta[3] = -1.0;
-}
-
-void _q1c0_phi(double xsi, double eta, double *phi)
-{
-    phi[0] = (1.0 + xsi) * (1.0 + eta) / 4.0;  
-    phi[1] = (1.0 - xsi) * (1.0 + eta) / 4.0;
-    phi[2] = (1.0 - xsi) * (1.0 - eta) / 4.0;
-    phi[3] = (1.0 + xsi) * (1.0 - eta) / 4.0;
-}
-
-void _q1c0_dphidx(double xsi, double eta, double *dphidxsi, double *dphideta)
-{
-    dphidxsi[0] =   (1.0 + eta) / 4.0;  
-    dphidxsi[1] = - (1.0 + eta) / 4.0;
-    dphidxsi[2] = - (1.0 - eta) / 4.0;
-    dphidxsi[3] =   (1.0 - eta) / 4.0;
-    dphideta[0] =   (1.0 + xsi) / 4.0;  
-    dphideta[1] =   (1.0 - xsi) / 4.0;
-    dphideta[2] = - (1.0 - xsi) / 4.0;
-    dphideta[3] = - (1.0 + xsi) / 4.0;
-
 }
 
 void _p1c0_x(double *xsi, double *eta) 
@@ -93,16 +57,10 @@ void _p1c0_dphidx(double xsi, double eta, double *dphidxsi, double *dphideta)
 
 }
 
-
 femDiscrete *femDiscreteCreate(int n, femElementType type)
 {
     femDiscrete *theSpace = malloc(sizeof(femDiscrete));
-    if (type == FEM_QUAD && n == 4) {
-        theSpace->n       = 4;
-        theSpace->x2      = _q1c0_x;
-        theSpace->phi2    = _q1c0_phi;
-        theSpace->dphi2dx = _q1c0_dphidx; }
-    else if (type == FEM_TRIANGLE && n == 3) {
+    if (type == FEM_TRIANGLE && n == 3) {
         theSpace->n       = 3;
         theSpace->x2      = _p1c0_x;
         theSpace->phi2    = _p1c0_phi;
@@ -152,7 +110,6 @@ void femDiscretePrint(femDiscrete *mySpace)
 }
 
 
-
 femMesh *femMeshRead(const char *filename)
 {
     femMesh *theMesh = malloc(sizeof(femMesh));
@@ -165,8 +122,8 @@ femMesh *femMeshRead(const char *filename)
     ErrorScan(fscanf(file, "Number of nodes %d \n", &theMesh->nNode));
     theMesh->X = malloc(sizeof(double)*theMesh->nNode);
     theMesh->Y = malloc(sizeof(double)*theMesh->nNode);
-    for (i = 0; i < theMesh->nNode; ++i) {
-        ErrorScan(fscanf(file,"%d : %le %le \n",&trash,&theMesh->X[i],&theMesh->Y[i])); }
+    for (i = 0; i < theMesh->nNode; ++i)
+		ErrorScan(fscanf(file,"%d : %le %le \n",&trash,&theMesh->X[i],&theMesh->Y[i]));
     
     char str[256]; if (fgets(str, sizeof(str), file) == NULL) Error("Corrupted mesh file !");
 
@@ -229,17 +186,13 @@ void femMeshClean(femMesh *theMesh)
     free(map);
 }
 
-
 void femMeshWrite(const femMesh *theMesh, const char *filename)
 {
     int i,*elem;
     
     FILE* file = fopen(filename,"w");
     
-        
-    
-    
-    
+
     fprintf(file, "Number of nodes %d \n", theMesh->nNode);
     for (i = 0; i < theMesh->nNode; ++i) {
         fprintf(file,"%6d : %14.7e %14.7e \n",i,theMesh->X[i],theMesh->Y[i]); }
@@ -327,7 +280,7 @@ int femEdgesCompare(const void *edgeOne, const void *edgeTwo)
                         return  0;
 }
 
-femFullSystem *femFullSystemCreate(int size)
+femFullSystem *femFullSystemCreate(int size) 
 {
     femFullSystem *theSystem = malloc(sizeof(femFullSystem));
     femFullSystemAlloc(theSystem, size);
@@ -362,7 +315,6 @@ void femFullSystemInit(femFullSystem *mySystem)
 		mySystem->B[i] = 0;
 }
 
-
 void femFullSystemPrint(femFullSystem *mySystem)
 {
 	double  **A, *B;
@@ -371,13 +323,7 @@ void femFullSystemPrint(femFullSystem *mySystem)
     A   = mySystem->A;
     B   = mySystem->B;
     size = mySystem->size;
-    
-    /*for (i=0; i < size; i++) {
-        for (j=0; j < size; j++)
-            if (Ax[i][j] == 0)  printf("         ");   
-            else               printf(" %+.1e",Ax[i][j]);
-        printf(" :  %+.1e \n",Bx[i]); }
-		*/
+
 	for (i = 0; i < size; i++) {
 		for (j = 0; j < size; j++)
 			if (A[i][j] == 0)  printf("         ");
@@ -394,35 +340,34 @@ double* femFullSystemEliminate(femFullSystem *mySystem)
     A	  = mySystem->A;
     B    = mySystem->B;
     size = mySystem->size;
-    
-    /* Gauss elimination */
+
     
     for (k=0; k < size; k++) {
         if ( fabs(A[k][k]) <= 1e-16 ) {
             printf("Pivot index %d  ",k);
             printf("Pivot value %e  ",A[k][k]);
-            Error("Cannot eliminate with such a pivot x matrix"); }
+            Error("Cannot eliminate with such a pivot x matrix");
+		}
         for (i = k+1 ; i <  size; i++) {
             factor = A[i][k] / A[k][k];
             for (j = k+1 ; j < size; j++) 
                 A[i][j] = A[i][j] - A[k][j] * factor;
-            B[i] = B[i] - B[k] * factor; }}
+            B[i] = B[i] - B[k] * factor; 
+		}
+	}
     
-    /* Back-substitution */
     
     for (i = size-1; i >= 0 ; i--) {
         factor = 0;
         for (j = i+1 ; j < size; j++)
             factor += A[i][j] * B[j];
-        B[i] = ( B[i] - factor)/A[i][i]; }
-
-	
+        B[i] = ( B[i] - factor)/A[i][i]; 
+	}
 
 	return(B);
 }
 
-void  femFullSystemConstrain(femFullSystem *mySystem, 
-                             int myNode, double myValue) 
+void  femFullSystemConstrain(femFullSystem *mySystem, int myNode, double myValue)
 {
 	double  **A, *B;
     int     i, size;
@@ -433,7 +378,8 @@ void  femFullSystemConstrain(femFullSystem *mySystem,
     
     for (i=0; i < size; i++) {
         B[i] -= myValue * A[i][myNode];
-        A[i][myNode] = 0; }
+        A[i][myNode] = 0;
+	}
     
     for (i=0; i < size; i++) 
         A[myNode][i] = 0; 
@@ -442,8 +388,7 @@ void  femFullSystemConstrain(femFullSystem *mySystem,
     B[myNode] = myValue;
 }
 
-
-double femMin(double *x, int n) 
+double femMin(double *x, int n)
 {
     double myMin = x[0];
     int i;
@@ -486,17 +431,6 @@ void femWarning(char *text, int line, char *file)
     printf("--------------------------------------------------------------------- Yek Yek !! \n\n");                                              
 }
 
-/*
-*  fem.c
-*  Library for MECA1120 : Finite Elements for dummies
-*
-*  Copyright (C) 2018 UCL-IMMC : Vincent Legat
-*  All rights reserved.
-*
-*/
-
-
-
 femGrains *femGrainsCreateSimple(int n, double r, double m, double radiusIn, double radiusOut)
 {
 	int i, nContact = n * (n - 1) / 2;
@@ -534,45 +468,6 @@ femGrains *femGrainsCreateSimple(int n, double r, double m, double radiusIn, dou
 	for (i = 0; i < nContact; i++)
 		theGrains->dvContacts[i] = 0.0;
 
-
-	return theGrains;
-}
-
-femGrains *femGrainsCreateTiny(double radiusIn, double radiusOut)
-{
-	femGrains *theGrains = malloc(sizeof(femGrains));
-	theGrains->n = 2;
-	theGrains->radiusIn = radiusIn;
-	theGrains->radiusOut = radiusOut;
-	theGrains->gravity[0] = 0.0;
-	theGrains->gravity[1] = -10;
-	theGrains->gamma = 1.0;
-
-	theGrains->x = malloc(2 * sizeof(double));
-	theGrains->y = malloc(2 * sizeof(double));
-	theGrains->vx = malloc(2 * sizeof(double));
-	theGrains->vy = malloc(2 * sizeof(double));
-	theGrains->r = malloc(2 * sizeof(double));
-	theGrains->m = malloc(2 * sizeof(double));
-	theGrains->dvBoundary = malloc(2 * sizeof(double));
-	theGrains->dvContacts = malloc(sizeof(double));
-
-	theGrains->r[0] = 0.1;
-	theGrains->r[1] = 0.1;
-	theGrains->m[0] = 1.0;
-	theGrains->m[1] = 1.0;
-	theGrains->x[0] = 0.0;
-	theGrains->x[1] = 0.0;
-	theGrains->y[0] = -radiusOut + 0.3;
-	theGrains->y[1] = -radiusOut + 0.1;
-	theGrains->vx[0] = 0.0;
-	theGrains->vx[1] = 0.0;
-	theGrains->vy[0] = 0.0;
-	theGrains->vy[1] = 0.0;
-	theGrains->dvBoundary[0] = 0.0;
-	theGrains->dvBoundary[1] = 0.0;
-
-	theGrains->dvContacts[0] = 0.0;
 
 	return theGrains;
 }

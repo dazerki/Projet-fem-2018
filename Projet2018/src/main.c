@@ -7,25 +7,16 @@
  *
  */
 
-#include <time.h>
 #include "glfem.h"
 
 
 
 int main(void)
 {   
- 
+	//femPoissonProblem* theProblem = femPoissonCreate(location);
 	femPoissonProblem* theProblem = femPoissonCreate("C:\\Users\\Louis\\Desktop\\Projet2018\\data\\projet_medium.txt");
     //femPoissonProblem* theProblem = femPoissonCreate("C:\\Users\\antoi\\Desktop\\UCL\\Q4\\myFem-Poisson\\data\\projet_medium.txt");
     
-    // Pour Windows, remplacer l'argument :
-    // ("../data/triangles_166.txt") 
-    // par :
-    // ("..\\data\\triangles_166.txt") 
-    //
-    // Sorry for the inconvenience :-)
-    // On réfléchit pour rendre cela plus transparent dans les homeworks suivants :-)
-    // Be patient !
     
     
     printf("Number of elements    : %4d\n", theProblem->mesh->nElem);
@@ -33,12 +24,9 @@ int main(void)
     printf("Number of segments    : %4d\n", theProblem->edges->nBoundary);
     printf("Number of unknowns    : %4d\n", theProblem->systemX->size);
 
-	//int l = femInBowl(theProblem, 0, 4, 5);
-	//printf("%d", l);
-
       
 
-	int    n = 15;
+	int    n = 40;
 	double radius = 0.05;
 	double mass = 0.05;
 	double radiusIn = 0.4;
@@ -49,14 +37,12 @@ int main(void)
 	double t = 0;
 	double iterMax = 100;
 	femGrains* theGrains = femGrainsCreateSimple(n, radius, mass, radiusIn, radiusOut);
-	for (int k = 0; k < n; k++) {
+	
+	for (int k = 0; k < n; k++)
 		theGrains->element[k] = findTriangle(theProblem, theGrains->x[k], theGrains->y[k]);
-	}
 	setVoisin(theProblem);
 	
-	//int quelTriangle = findTriangle(theProblem, -1.65, 0.9);
-	//printf("%d \n", quelTriangle);
-	//glfwMakeContextCurrent(window);
+
 	double *V = malloc(sizeof(double) * theProblem->systemX->size);
 	femPoissonSolve(theProblem, theGrains);
 	int theRunningMode = 1.0;
@@ -70,13 +56,13 @@ int main(void)
     
     GLFWwindow* window = glfemInit("MECA1120 : Projet ");
     glfwMakeContextCurrent(window);
-    do {
+    
+	do {
 		int i, w, h;
 		double currentTime = glfwGetTime();
 
         glfwGetFramebufferSize(window,&w,&h);
         glfemReshapeWindows(theProblem->mesh,w,h);
-		//glfemReshapeWindows2(radiusOut, w, h);
 		       
 		for (int i = 0; i < theProblem->systemX->size; i++) {
 			V[i] = sqrt(pow(theProblem->systemX->B[i], 2) + pow(theProblem->systemY->B[i], 2));
@@ -103,10 +89,13 @@ int main(void)
 				printf("Time = %4g : ", t);
 				
 				// A decommenter pour pouvoir progresser pas par pas
-				//       printf("press CR to compute the next time step >>");
-				//      char c= getchar();
 				//
-				//_sleep(100);
+				//printf("press CR to compute the next time step >>");
+				//char c= getchar();
+				//
+				
+				//Partie a decommenter pour resolution de Couette
+				//
 				//femFullSystemReinit(theProblem);
 				//femPoissonSolve(theProblem, theGrains);
 				femGrainsUpdate(theGrains, dt, tol, iterMax,theProblem);
@@ -131,6 +120,7 @@ int main(void)
 	glfwTerminate();
 	femGrainsFree(theGrains);
 	femPoissonFree(theProblem);
+	free(V);
 	exit(EXIT_SUCCESS);
     
     
