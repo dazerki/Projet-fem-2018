@@ -36,8 +36,8 @@ int main(void)
 
     
 	int    n = 15;
-	double radius = 0.05;
-	double mass = 0.1;
+	double radius = 0.1;
+	double mass = 0.05;
 	double radiusIn = 0.4;
 	double radiusOut = 2.0;
 	double dt = 1.0e-1;
@@ -46,6 +46,9 @@ int main(void)
 	double t = 0;
 	double iterMax = 100;
 	femGrains* theGrains = femGrainsCreateSimple(n, radius, mass, radiusIn, radiusOut);
+	for (int k = 0; k < n; k++) {
+		theGrains->element[k] = findTriangle(theProblem, theGrains->x[k], theGrains->y[k]);
+	}
 	femPoissonSolve(theProblem, theGrains);
 	
 	//int quelTriangle = findTriangle(theProblem, -1.65, 0.9);
@@ -77,9 +80,6 @@ int main(void)
 			V[i] = sqrt(pow(theProblem->systemX->B[i], 2) + pow(theProblem->systemY->B[i], 2));
 		}
 		glfemPlotField(theProblem->mesh, V);
-		for (int i = 0; i < theProblem->systemX->size; i++) {
-			printf("%d : %f\n", i, V);
-		}
 		
 		for (i = 0; i < theGrains->n; i++) {
 
@@ -104,9 +104,10 @@ int main(void)
 				//      char c= getchar();
 				//
 				//_sleep(100);
+				femGrainsUpdate(theGrains, dt, tol, iterMax, theProblem);
 				femFullSystemReinit(theProblem);
 				femPoissonSolve(theProblem, theGrains);
-				femGrainsUpdate(theGrains, dt, tol, iterMax,theProblem);
+				
 				t += dt;
 
 			}

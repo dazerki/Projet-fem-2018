@@ -71,12 +71,6 @@ void femFullSystemReinit(femPoissonProblem *theProblem)
 		theProblem->systemX->B[i] = 0;
 		theProblem->systemY->B[i] = 0;
 	}
-	for (int k = 0; k < size; k++) {
-		for (int l = 0; l < size; l++) {
-			theProblem->systemX->A[k][l] = 0;
-			theProblem->systemY->A[k][l] = 0;
-		}
-	}
 }
 
 
@@ -142,11 +136,9 @@ void femPoissonSolve(femPoissonProblem *theProblem, femGrains *theGrains)
 				theProblem->systemY->B[map[f]] = 0;
 			}
 			double xsi[3], phi[3], point[2], xs[3], ys[3];
-			int elem, map[4];
+			int elem, map[3];
 			for (int i = 0; i < theGrains->n; ++i) {
 				elem = theGrains->element[i];
-				if (elem < 0)
-					continue;
 				point[0] = theGrains->x[i];
 				point[1] = theGrains->y[i];
 				femMeshLocal(theProblem->mesh, elem, map, xs, ys);
@@ -169,9 +161,9 @@ void femPoissonSolve(femPoissonProblem *theProblem, femGrains *theGrains)
 		 x1 = theProblem->mesh->X[theProblem->edges->edges[z].node[0]];
 		 y1 = theProblem->mesh->Y[theProblem->edges->edges[z].node[0]];
 		if (theProblem->edges->edges[z].elem[1] < 0 && sqrt(pow(x1,2.0)+ pow(y1,2.0)>1.25)){
-			double theta = atan2(y1,x1);
-			double speedX = sin(theta);
-			double speedY = -cos(theta);
+			double theta = atan2(x1,y1);
+			double speedX = cos(theta);
+			double speedY = -sin(theta);
 			for (int i = 0; i < 2; i++) {
 				femFullSystemConstrain(theProblem->systemX, theProblem->edges->edges[z].node[i], speedX);
 				femFullSystemConstrain(theProblem->systemY, theProblem->edges->edges[z].node[i], speedY);
@@ -312,18 +304,12 @@ void femGrainsUpdate(femGrains *myGrains, double dt, double tol, double iterMax,
 	// 
 	// -1- Calcul des nouvelles vitesses des grains sur base de la gravité et de la trainee
 	//
-	for (int k = 0; k < n; k++) {
-		myGrains->element[k] = findTriangle(theProblem, x[k], y[k]);
-	}
+	
 	int elem, map[3];
 	double xloc[3], yloc[3], phi[3], xsi[2], p[2], ux, uy;
 	for (int i = 0; i < n; ++i) {
-		elem = myGrains->element[i];
-		if (elem < 0) {
-			ux = 0;
-			uy = 0;
-		}
-		else {
+		elem = myGrains->element[i]; 
+		
 			p[0] = x[i];
 			p[1] = y[i];
 			femMeshLocal(theProblem->mesh, elem, map, xloc, yloc);
@@ -332,12 +318,12 @@ void femGrainsUpdate(femGrains *myGrains, double dt, double tol, double iterMax,
 			uy = 0;
 			theProblem->space->phi2(xsi[0], xsi[1], phi);
 			for (int j = 0; j < 3; ++j) {
-				ux += phi[j] * theProblem->systemX->B[map[j]];
+				ux += phi[j] * theProblem->systemX->B[map[j]]; //printf("%f \n", phi[j]);
 				uy += phi[j] * theProblem->systemY->B[map[j]];
 			}
-		}
-		vx[i] += (m[i] * gx -   (vx[i] - ux)) * dt / m[i];
-		vy[i] += (m[i] * gy - (vy[i] - uy)) * dt / m[i];
+		
+		vx[i] += (gx - (vx[i] - ux)/m[i]) * dt ; printf("%f \n", vx[i]-ux);
+		vy[i] += (gy - (vy[i] - uy)/m[i]) * dt ;
 	}
 	/*for (int j = 0; j < n; j++) {
 		int elem = findTriangle(theProblem, x[j], y[j]); 
@@ -361,7 +347,9 @@ void femGrainsUpdate(femGrains *myGrains, double dt, double tol, double iterMax,
 		x[i] += vx[i] * dt;
 		y[i] += vy[i] * dt;
 	}
-	
+	for (int k = 0; k < n; k++) {
+		myGrains->element[k] = findTriangle(theProblem, x[k], y[k]);
+	}
 }
 
 
