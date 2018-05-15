@@ -5,6 +5,58 @@
 double jacobien(double x1,double x2,double x3,double y1,double y2, double y3) {
 	return ((x1 - x3)*(y2 - y1) - (x1 - x2)*(y3 - y1));
 }
+void setVoisin(femPoissonProblem* theProblem)
+{
+	int a, b, c, temp, flag;
+	int i, j, k;
+	int * tab = (int *)malloc(sizeof(int)*theProblem->mesh->nElem * 3);
+	int loc = 0;
+	for (i = 0; i < theProblem->mesh->nElem; i++)
+	{
+		a = theProblem->mesh->elem[3 * i];
+		b = theProblem->mesh->elem[(3 * i) + 1];
+		c = theProblem->mesh->elem[(3 * i) + 2];
+		flag = 0;
+		for (j = 0; i < (theProblem->mesh->nElem) && flag<3; j++)
+		{
+			if (j != i) {
+				for (k = 0; k < 3; k++)
+				{
+					if (theProblem->mesh->elem[(j * 3) + k] == a)
+					{
+						if (theProblem->mesh->elem[j * 3] == b || theProblem->mesh->elem[j * 3] == c || theProblem->mesh->elem[(j * 3) + 1] == b ||
+							theProblem->mesh->elem[(j * 3) + 1] == c || theProblem->mesh->elem[(j * 3) + 2] == b || theProblem->mesh->elem[(j * 3) + 2] == c)
+						{
+							*(tab + loc) = j;
+							loc++;
+							flag++;
+							printf("%d=%d\n", i, j);
+						}
+					}
+					else if (theProblem->mesh->elem[(j * 3) + k] == b)
+					{
+						if (theProblem->mesh->elem[j * 3] == c || theProblem->mesh->elem[(j * 3) + 1] == c || theProblem->mesh->elem[(j * 3) + 2] == c)
+						{
+							*(tab + loc) = j;
+							loc++;
+							flag++;
+							printf("%d=%d\n", i, j);
+						}
+					}
+					//printf("%d\n", theProblem->mesh->elem[(j * 3) + k]);
+				}
+				if (j == (theProblem->mesh->nElem - 1) && flag<2)
+				{
+					*(tab + loc) = -1;
+					flag++;
+					loc++;
+					printf("%d=-1\n", i);
+				}
+			}
+		}
+	}
+	theProblem->mesh->voisin = tab;
+}
 int femInBowl(femPoissonProblem* theProblem, int numElem, double xBowl, double yBowl)
 {
 	double s1 = 0;
@@ -36,6 +88,17 @@ int findTriangle(femPoissonProblem* theProblem, double x, double y) {
 			return i;
 	}
 	return 0;
+}
+int updateTriangle(femPoissonProblem* theProblem, int iElem, double x, double y, int iter) {
+	if (femInBowl(theProblem, iElem, x, y))
+		return iElem;
+	else {
+		for (int i = 0; i < 3; i++) {
+			if (femInBowl(theProblem, theProblem->mesh->voisin[iElem * 3 + i], x, y))
+				return (theProblem->mesh->voisin[iElem * 3 + i]);
+		}
+		return (findTriangle(theProblem, x, y));
+	}
 }
 
 femPoissonProblem *femPoissonCreate(const char *filename)
@@ -70,6 +133,12 @@ void femFullSystemReinit(femPoissonProblem *theProblem)
 	for (int i = 0; i < size*(size + 1); i++) {
 		theProblem->systemX->B[i] = 0;
 		theProblem->systemY->B[i] = 0;
+	}
+	for (int k = 0; k < size; k++) {
+		for (int l = 0; l < size; l++) {
+			theProblem->systemX->A[k][l] = 0;
+			theProblem->systemY->A[k][l] = 0;
+		}
 	}
 }
 
@@ -132,9 +201,10 @@ void femPoissonSolve(femPoissonProblem *theProblem, femGrains *theGrains)
 				}
 			}
 			for (int f = 0; f < theProblem->space->n; f++) {
-				theProblem->systemX->B[map[f]] = 0; //theProblem->system->Bx[map[f]] + phi[f] * Je *  theProblem->rule->weight[p];
-				theProblem->systemY->B[map[f]] = 0;
+				theProblem->systemX->B[map[f]] += 0; //theProblem->system->Bx[map[f]] + phi[f] * Je *  theProblem->rule->weight[p];
+				theProblem->systemY->B[map[f]] += 0;
 			}
+			/*
 			double xsi[3], phi[3], point[2], xs[3], ys[3];
 			int elem, map[3];
 			for (int i = 0; i < theGrains->n; ++i) {
@@ -146,13 +216,13 @@ void femPoissonSolve(femPoissonProblem *theProblem, femGrains *theGrains)
 				theProblem->space->phi2(xsi[0], xsi[1], phi);
 				for (int k = 0; k < 3; ++k) {
 					for (int l = 0; l < 3; ++l) {
-						theProblem->systemX->A[map[k]][map[l]] +=   phi[k] * phi[l];
-						theProblem->systemY->A[map[k]][map[l]] +=  phi[k] * phi[l];
+						theProblem->systemX->A[map[k]][map[l]] += phi[k] * phi[l];
+						theProblem->systemY->A[map[k]][map[l]] += phi[k] * phi[l];
 					}
-					theProblem->systemX->B[map[k]] =  phi[k] * theGrains->vx[i];
-					theProblem->systemY->B[map[k]] =  phi[k] * theGrains->vy[i];
+					theProblem->systemX->B[map[k]] = phi[k] * theGrains->vx[i];
+					theProblem->systemY->B[map[k]] = phi[k] * theGrains->vy[i];
 				}
-			}
+			}*/
 			
 		}
 	}
@@ -161,9 +231,9 @@ void femPoissonSolve(femPoissonProblem *theProblem, femGrains *theGrains)
 		 x1 = theProblem->mesh->X[theProblem->edges->edges[z].node[0]];
 		 y1 = theProblem->mesh->Y[theProblem->edges->edges[z].node[0]];
 		if (theProblem->edges->edges[z].elem[1] < 0 && sqrt(pow(x1,2.0)+ pow(y1,2.0)>1.25)){
-			double theta = atan2(x1,y1);
-			double speedX = cos(theta);
-			double speedY = -sin(theta);
+			double theta = atan2(y1,x1);
+			double speedX = sin(theta);
+			double speedY = -cos(theta);
 			for (int i = 0; i < 2; i++) {
 				femFullSystemConstrain(theProblem->systemX, theProblem->edges->edges[z].node[i], speedX);
 				femFullSystemConstrain(theProblem->systemY, theProblem->edges->edges[z].node[i], speedY);
@@ -296,7 +366,7 @@ void femGrainsUpdate(femGrains *myGrains, double dt, double tol, double iterMax,
 	double *m = myGrains->m;
 	double *vy = myGrains->vy;
 	double *vx = myGrains->vx;
-	double gamma = myGrains->gamma;
+	double gamma2 = myGrains->gamma;
 	double gx = myGrains->gravity[0];
 	double gy = myGrains->gravity[1];
 
@@ -308,8 +378,12 @@ void femGrainsUpdate(femGrains *myGrains, double dt, double tol, double iterMax,
 	int elem, map[3];
 	double xloc[3], yloc[3], phi[3], xsi[2], p[2], ux, uy;
 	for (int i = 0; i < n; ++i) {
-		elem = myGrains->element[i]; 
-		
+		elem = myGrains->element[i];
+		if (elem < 0) {
+			ux = 0;
+			uy = 0;
+		}
+		else {
 			p[0] = x[i];
 			p[1] = y[i];
 			femMeshLocal(theProblem->mesh, elem, map, xloc, yloc);
@@ -318,19 +392,19 @@ void femGrainsUpdate(femGrains *myGrains, double dt, double tol, double iterMax,
 			uy = 0;
 			theProblem->space->phi2(xsi[0], xsi[1], phi);
 			for (int j = 0; j < 3; ++j) {
-				ux += phi[j] * theProblem->systemX->B[map[j]]; //printf("%f \n", phi[j]);
+				ux += phi[j] * theProblem->systemX->B[map[j]];
 				uy += phi[j] * theProblem->systemY->B[map[j]];
 			}
-		
-		vx[i] += (gx - (vx[i] - ux)/m[i]) * dt ; printf("%f \n", vx[i]-ux);
-		vy[i] += (gy - (vy[i] - uy)/m[i]) * dt ;
+		}
+		vx[i] += (m[i] * gx -   (vx[i] - ux)) * dt / m[i];
+		vy[i] += (m[i] * gy - (vy[i] - uy)) * dt / m[i];
 	}
 	/*for (int j = 0; j < n; j++) {
 		int elem = findTriangle(theProblem, x[j], y[j]); 
 		vx[j] += -(dt * gamma / m[j])*(vx[j] - theProblem->systemX->B[elem]); 
 		vy[j] += dt * gy - (dt * gamma/m[j])*(vy[j]- theProblem->systemY->B[elem]) ; 
 	}*/
-	printf("%f", gamma);
+	printf("%f", gamma2);
 	//
 	// -2- Correction des vitesses pour tenir compte des contacts        
 	//       
@@ -348,7 +422,7 @@ void femGrainsUpdate(femGrains *myGrains, double dt, double tol, double iterMax,
 		y[i] += vy[i] * dt;
 	}
 	for (int k = 0; k < n; k++) {
-		myGrains->element[k] = findTriangle(theProblem, x[k], y[k]);
+		myGrains->element[k] = updateTriangle(theProblem ,myGrains->element[k], x[k], y[k], 0);
 	}
 }
 

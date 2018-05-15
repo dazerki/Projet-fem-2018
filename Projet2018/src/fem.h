@@ -31,6 +31,7 @@ typedef struct {
     int nElem;
     int nNode;
     int nLocalNode;
+	int* voisin;
 } femMesh;
 
 typedef struct {
@@ -122,7 +123,7 @@ void                 femFullSystemConstrain(femFullSystem* mySystem, int myNode,
 
 femPoissonProblem   *femPoissonCreate(const char *filename);
 void                 femPoissonFree(femPoissonProblem *theProblem);
-void				 femPoissonSolve(femPoissonProblem *theProblem, femGrains *theGrains);
+void                 femPoissonSolve(femPoissonProblem *theProblem, femGrains *theGrains);
 
 femGrains  *femGrainsCreateSimple(int n, double r, double m, double radiusIn, double radiusOut);
 femGrains  *femGrainsCreateTiny(double radiusIn, double radiusOut);
@@ -141,5 +142,7 @@ int			findTriangle(femPoissonProblem* theProblem, double x, double y);
 void		femFullSystemReinit(femPoissonProblem *theProblem);
 double		jacobien(double x1, double x2, double x3, double y1, double y2, double y3);
 void		isomorphisme(double X[3], double Y[3], double x[2], double *xsi);
+void		setVoisin(femPoissonProblem* theProblem);
+int			updateTriangle(femPoissonProblem* theProblem, int iElem, double x, double y, int iter);
 
 #endif
