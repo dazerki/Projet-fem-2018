@@ -30,7 +30,7 @@ void setVoisin(femPoissonProblem* theProblem)
 							*(tab + loc) = j;
 							loc++;
 							flag++;
-							printf("%d=%d\n", i, j);
+							//printf("%d=%d\n", i, j);
 						}
 					}
 					else if (theProblem->mesh->elem[(j * 3) + k] == b)
@@ -40,7 +40,7 @@ void setVoisin(femPoissonProblem* theProblem)
 							*(tab + loc) = j;
 							loc++;
 							flag++;
-							printf("%d=%d\n", i, j);
+							//printf("%d=%d\n", i, j);
 						}
 					}
 					//printf("%d\n", theProblem->mesh->elem[(j * 3) + k]);
@@ -50,7 +50,7 @@ void setVoisin(femPoissonProblem* theProblem)
 					*(tab + loc) = -1;
 					flag++;
 					loc++;
-					printf("%d=-1\n", i);
+					//printf("%d=-1\n", i);
 				}
 			}
 		}
@@ -59,6 +59,9 @@ void setVoisin(femPoissonProblem* theProblem)
 }
 int femInBowl(femPoissonProblem* theProblem, int numElem, double xBowl, double yBowl)
 {
+	if (numElem == -1) {
+		return -1;
+	}
 	double s1 = 0;
 	double s2 = 0;
 	double s3 = 0;
@@ -73,8 +76,8 @@ int femInBowl(femPoissonProblem* theProblem, int numElem, double xBowl, double y
 	s2 = jacobien(xBowl, x[1], x[2], yBowl, y[1], y[2]); 
 	s3 = jacobien(xBowl, x[2], x[0], yBowl, y[2], y[0]); 
 	return ((s1 >= 0 && s2 >= 0 && s3 >= 0) || (s1 <= 0 && s2 <= 0 && s3 <= 0));
-	
-}
+}	
+
 void isomorphisme(double X[3], double Y[3], double x[2], double *xsi)
 {
 	double X1 = X[0], X2 = X[1], X3 = X[2];
@@ -90,15 +93,73 @@ int findTriangle(femPoissonProblem* theProblem, double x, double y) {
 	return 0;
 }
 int updateTriangle(femPoissonProblem* theProblem, int iElem, double x, double y, int iter) {
+	int i, j, k;
+	int temp1;
 	if (femInBowl(theProblem, iElem, x, y))
 		return iElem;
 	else {
 		for (int i = 0; i < 3; i++) {
 			if (femInBowl(theProblem, theProblem->mesh->voisin[iElem * 3 + i], x, y))
 				return (theProblem->mesh->voisin[iElem * 3 + i]);
+			temp1 = theProblem->mesh->voisin[iElem * 3 + i];
+			for (int j = 0; i < 3; i++) {
+				if (femInBowl(theProblem, theProblem->mesh->voisin[temp1 * 3 + j], x, y))
+					return (theProblem->mesh->voisin[temp1 * 3 + i]);
+			}
 		}
 		return (findTriangle(theProblem, x, y));
 	}
+		
+	/*else {
+		if (femInBowl(theProblem, theProblem->mesh->voisin[iElem * 3], x, y)) {
+			return theProblem->mesh->voisin[iElem * 3];
+		}
+		if (femInBowl(theProblem, theProblem->mesh->voisin[iElem * 3 + 1], x, y)) {
+			return theProblem->mesh->voisin[iElem * 3 + 1];
+		}
+		if (femInBowl(theProblem, theProblem->mesh->voisin[iElem * 3 + 2], x, y)) {
+			return theProblem->mesh->voisin[iElem * 3 + 2];
+		}
+		for (i = 0; i < 3; i++)
+		{
+			temp1 = theProblem->mesh->voisin[iElem * 3 + i];
+			if (temp1 != iElem && temp1 != -1) {
+				if (femInBowl(theProblem, theProblem->mesh->voisin[temp1 * 3], x, y)) {
+					return theProblem->mesh->voisin[temp1 * 3];
+				}
+				if (femInBowl(theProblem, theProblem->mesh->voisin[temp1 * 3 + 1], x, y)) {
+					return theProblem->mesh->voisin[temp1 * 3 + 1];
+				}
+				if (femInBowl(theProblem, theProblem->mesh->voisin[temp1 * 3 + 2], x, y)) {
+					return theProblem->mesh->voisin[temp1 * 3 + 2];
+				}
+
+			}
+		}
+
+		for (i = 0; i < 3; i++)
+		{
+			temp1 = theProblem->mesh->voisin[iElem * 3 + i];
+			if (temp1 != iElem && temp1 != -1) {
+				for (j = 0; j < 3; j++)
+				{
+					temp2 = theProblem->mesh->voisin[temp1 * 3 + j];
+					if (temp2 != temp1 && temp2 != -1) {
+						if (femInBowl(theProblem, theProblem->mesh->voisin[temp2 * 3], x, y)) {
+							return theProblem->mesh->voisin[temp2 * 3];
+						}
+						if (femInBowl(theProblem, theProblem->mesh->voisin[temp2 * 3 + 1], x, y)) {
+							return theProblem->mesh->voisin[temp2 * 3 + 1];
+						}
+						if (femInBowl(theProblem, theProblem->mesh->voisin[temp2 * 3 + 2], x, y)) {
+							return theProblem->mesh->voisin[temp2 * 3 + 2];
+						}
+					}
+				}
+			}
+		}
+		return (findTriangle(theProblem, x, y));
+	}*/
 }
 
 femPoissonProblem *femPoissonCreate(const char *filename)

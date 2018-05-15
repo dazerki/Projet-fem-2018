@@ -7,6 +7,7 @@
  *
  */
 
+#include <time.h>
 #include "glfem.h"
 
 
@@ -14,7 +15,8 @@
 int main(void)
 {   
  
-    femPoissonProblem* theProblem = femPoissonCreate("C:\\Users\\antoi\\Desktop\\UCL\\Q4\\myFem-Poisson\\data\\projet_medium.txt");
+	femPoissonProblem* theProblem = femPoissonCreate("C:\\Users\\Louis\\Desktop\\Projet2018\\data\\projet_medium.txt");
+    //femPoissonProblem* theProblem = femPoissonCreate("C:\\Users\\antoi\\Desktop\\UCL\\Q4\\myFem-Poisson\\data\\projet_medium.txt");
     
     // Pour Windows, remplacer l'argument :
     // ("../data/triangles_166.txt") 
