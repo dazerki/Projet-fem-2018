@@ -17,7 +17,6 @@ static const double _gaussTri3Weight[3]  = { 0.166666666666667, 0.16666666666666
 femIntegration *femIntegrationCreate(int n, femElementType type)
 {
     femIntegration *theRule = malloc(sizeof(femIntegration));
-    if (type == FEM_QUAD && n == 4) {
 	 if (type == FEM_TRIANGLE && n == 3) {
         theRule->n      = 3;
         theRule->xsi    = _gaussTri3Xsi;
